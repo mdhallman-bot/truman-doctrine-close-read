@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Truman Doctrine Close Read Simulation</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #1d4ed8;
+      --accent-soft: #dbeafe;
+      --good: #166534;
+      --good-soft: #dcfce7;
+      --warn: #92400e;
+      --warn-soft: #fef3c7;
+      --bad: #991b1b;
+      --bad-soft: #fee2e2;
+      --hl-evidence: #fff3a3;
+      --hl-claim: #ffd6a5;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    header {
+      background: linear-gradient(135deg, #0f172a, #1d4ed8);
+      color: white;
+      padding: 28px 20px;
+    }
+    .header-wrap, main {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    h1, h2, h3, h4 { margin: 0 0 10px; }
+    p { margin: 0 0 12px; }
+    main {
+      padding: 20px;
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .score-banner {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+    .directions {
+      background: #f8fafc;
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .small { color: var(--muted); font-size: 0.94rem; }
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fcfdff;
+    }
+    summary { cursor: pointer; font-weight: 700; }
+    .vocab-bank {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .term-card, .drop-zone, .draggable-term, .mc-question, .feedback, .highlight-option, .speech, .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+    .term-card, .mini-card { padding: 12px; }
+    .vocab-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      margin-top: 12px;
+    }
+    .vocab-set {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fcfdff;
+    }
+    .vocab-set h3 {
+      margin-bottom: 10px;
+    }
+    .draggable-terms, .drop-zones {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .draggable-term {
+      padding: 10px 12px;
+      cursor: grab;
+      font-weight: 700;
+    }
+    .draggable-term.used {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .drop-zone {
+      padding: 12px;
+      min-height: 72px;
+    }
+    .drop-zone.correct {
+      background: var(--good-soft);
+      border-color: #86efac;
+    }
+    .drop-zone.incorrect {
+      background: var(--bad-soft);
+      border-color: #fca5a5;
+    }
+    .drop-answer {
+      margin-top: 8px;
+      font-weight: 700;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .toolbar span { font-weight: 700; color: var(--muted); font-size: 0.95rem; }
+    .btn, .chunk-nav button, .highlight-option {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: inherit;
+    }
+    .btn, .chunk-nav button {
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+    .btn.secondary, .chunk-nav button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .tool-active {
+      outline: 3px solid rgba(29, 78, 216, 0.25);
+      transform: translateY(-1px);
+    }
+    .chunk-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .sticky-tools {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(247, 248, 251, 0.96);
+      backdrop-filter: blur(8px);
+      padding: 10px 0 0;
+    }
+    .chunk { display: none; }
+    .locked-section {
+      opacity: 0.45;
+      pointer-events: none;
+      user-select: none;
+      filter: grayscale(0.15);
+    }
+    .chunk.active { display: block; }
+    .chunk-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .speech {
+      padding: 16px;
+      white-space: pre-wrap;
+      background: #fbfdff;
+    }
+    .interactive-text {
+      line-height: 1.8;
+      user-select: text;
+    }
+    .selected-highlight {
+      background: var(--hl-evidence);
+      border-radius: 4px;
+      padding: 0 2px;
+    }
+    .selected-highlight.claim {
+      background: var(--hl-claim);
+    }
+    .given-highlight {
+      background: var(--hl-evidence);
+      padding: 0 2px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .prompt-box {
+      background: var(--warn-soft);
+      color: #78350f;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      font-weight: 700;
+    }
+    .response-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .explain-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .feedback {
+      margin-top: 8px;
+      padding: 10px 12px;
+      display: none;
+      font-weight: 700;
+    }
+    .feedback.show { display: block; }
+    .feedback.good { background: var(--good-soft); color: var(--good); border-color: #86efac; }
+    .feedback.warn { background: var(--warn-soft); color: var(--warn); border-color: #fcd34d; }
+    .feedback.bad { background: var(--bad-soft); color: var(--bad); border-color: #fca5a5; }
+    .sentence-stems { display: grid; gap: 8px; }
+    .highlight-option {
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+      border: 1px solid var(--line);
+      background: white;
+    }
+    .highlight-option:hover { border-color: #94a3b8; }
+    .highlight-option.selected-good {
+      background: var(--good-soft);
+      border-color: #86efac;
+      color: var(--good);
+      font-weight: 700;
+    }
+    .highlight-option.is-disabled { opacity: 0.55; }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font: inherit;
+      background: white;
+      min-height: 90px;
+      resize: vertical;
+    }
+    .partner-box textarea { min-height: 72px; }
+    .save-status { color: var(--good); font-weight: 700; font-size: 0.95rem; }
+    @media print {
+      .chunk { display: block !important; }
+      .sticky-tools, .toolbar, .btn, .chunk-nav { display: none !important; }
+      body { background: white; }
+      .card { box-shadow: none; break-inside: avoid; }
+      textarea, input[type="text"] { border: 1px solid #999; }
+    }
+    @media (max-width: 900px) {
+      .vocab-layout, .response-grid, .explain-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-wrap">
+      <div class="pill">10th Grade U.S. History · Cold War Foundation Lesson</div>
+      <h1>Truman Doctrine Close Read Simulation</h1>
+      <p>Read the full speech first. Then work through each chunk as a class, answer the questions, explain how the topic changes, and write the main idea using vocabulary.</p>
+      <div class="score-banner">
+        <div>Completion Grade: <span id="completionScore">0%</span></div>
+        <div class="small" style="color:#1e3a8a;">Full completion requires: vocab activity, all checks completed, 1 vocabulary term in each chunk main idea, and 4 vocabulary terms in the final write-up.</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Part 1 · Vocabulary Preview and Drag-and-Drop</h2>
+      <div class="directions"><strong>Directions:</strong> Read the vocabulary bank first. Then drag each term to the correct definition. Correct matches turn green. Incorrect matches turn red.</div>
+      <div class="prompt-box" id="vocabLockMessage">Complete all vocabulary matches correctly to unlock the rest of the assignment.</div>
+
+      <div class="vocab-bank">
+        <div class="term-card"><strong>Containment</strong><br>Stopping the spread of communism.</div>
+        <div class="term-card"><strong>Totalitarian</strong><br>A government that controls nearly every part of life.</div>
+        <div class="term-card"><strong>Subjugation</strong><br>Being brought under the control of another power.</div>
+        <div class="term-card"><strong>Coercion</strong><br>Forcing someone to act through pressure or threats.</div>
+        <div class="term-card"><strong>Integrity</strong><br>The condition of being whole, independent, and stable.</div>
+        <div class="term-card"><strong>Aggressive movements</strong><br>Actions meant to spread control or power into other places.</div>
+        <div class="term-card"><strong>Free peoples</strong><br>Nations or groups able to choose their own government.</div>
+        <div class="term-card"><strong>Oppression</strong><br>Cruel or unfair treatment by those in power.</div>
+        <div class="term-card"><strong>Economic stability</strong><br>A steady economy that can function and recover.</div>
+        <div class="term-card"><strong>Political processes</strong><br>The ways a government makes decisions and carries out power.</div>
+        <div class="term-card"><strong>National security</strong><br>Protection of a country from threats.</div>
+        <div class="term-card"><strong>Totalitarian regime</strong><br>A government system ruled by a small group using control and fear.</div>
+      </div>
+
+      <div class="score-banner" style="margin-top:14px;">
+        <div>Vocabulary Progress: <span id="vocabProgress">0 / 12 correct</span></div>
+        <div class="small" style="color:#1e3a8a;">Complete both vocab sets to unlock the rest of the assignment.</div>
+      </div>
+
+      <div class="vocab-layout">
+        <div class="vocab-set">
+          <h3>Set A</h3>
+          <div class="vocab-layout" style="grid-template-columns: 0.95fr 1.05fr;">
+            <div class="draggable-terms" id="draggableTermsA">
+              <div class="draggable-term" draggable="true" data-term="Containment" data-set="A">Containment</div>
+              <div class="draggable-term" draggable="true" data-term="Totalitarian" data-set="A">Totalitarian</div>
+              <div class="draggable-term" draggable="true" data-term="Subjugation" data-set="A">Subjugation</div>
+              <div class="draggable-term" draggable="true" data-term="Coercion" data-set="A">Coercion</div>
+              <div class="draggable-term" draggable="true" data-term="Integrity" data-set="A">Integrity</div>
+              <div class="draggable-term" draggable="true" data-term="Aggressive movements" data-set="A">Aggressive movements</div>
+            </div>
+            <div class="drop-zones" id="dropZonesA">
+              <div class="drop-zone" data-answer="Containment" data-set="A">Stopping the spread of communism.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Totalitarian" data-set="A">A government that controls nearly every part of life.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Subjugation" data-set="A">Being brought under the control of another power.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Coercion" data-set="A">Forcing someone to act through pressure or threats.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Integrity" data-set="A">The condition of being whole, independent, and stable.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Aggressive movements" data-set="A">Actions meant to spread control or power into other places.<div class="drop-answer"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vocab-set">
+          <h3>Set B</h3>
+          <div class="vocab-layout" style="grid-template-columns: 0.95fr 1.05fr;">
+            <div class="draggable-terms" id="draggableTermsB">
+              <div class="draggable-term" draggable="true" data-term="Free peoples" data-set="B">Free peoples</div>
+              <div class="draggable-term" draggable="true" data-term="Oppression" data-set="B">Oppression</div>
+              <div class="draggable-term" draggable="true" data-term="Economic stability" data-set="B">Economic stability</div>
+              <div class="draggable-term" draggable="true" data-term="Political processes" data-set="B">Political processes</div>
+              <div class="draggable-term" draggable="true" data-term="National security" data-set="B">National security</div>
+              <div class="draggable-term" draggable="true" data-term="Totalitarian regime" data-set="B">Totalitarian regime</div>
+            </div>
+            <div class="drop-zones" id="dropZonesB">
+              <div class="drop-zone" data-answer="Free peoples" data-set="B">Nations or groups able to choose their own government.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Oppression" data-set="B">Cruel or unfair treatment by those in power.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Economic stability" data-set="B">A steady economy that can function and recover.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Political processes" data-set="B">The ways a government makes decisions and carries out power.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="National security" data-set="B">Protection of a country from threats.<div class="drop-answer"></div></div>
+              <div class="drop-zone" data-answer="Totalitarian regime" data-set="B">A government system ruled by a small group using control and fear.<div class="drop-answer"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card locked-section" id="firstReadSection">
+      <h2>Part 2 · First Read Through</h2>
+      <div class="directions"><strong>Directions:</strong> Read the entire speech once. Do not highlight yet. Your only job on the first read is to figure out what Truman wants Congress to do and why.</div>
+      <details>
+        <summary>Open full speech</summary>
+        <div class="speech">The gravity of the situation which confronts the world today necessitates my appearance before a joint session of the Congress. The foreign policy and the national security of this country are involved.
+
+One aspect of the present situation, which I wish to present to you at this time for your consideration and decision, concerns Greece and Turkey.
+
+The United States has received from the Greek Government an urgent appeal for financial and economic assistance. Preliminary reports from the American Economic Mission now in Greece and reports from the American Ambassador in Greece corroborate the statement of the Greek Government that assistance is imperative if Greece is to survive as a free nation.
+
+I do not believe that the American people and the Congress wish to turn a deaf ear to the appeal of the Greek Government.
+
+Greece is not a rich country. Lack of sufficient natural resources has always forced the Greek people to work hard to make both ends meet. Since 1940, this industrious and peace loving country has suffered invasion, four years of cruel enemy occupation, and bitter internal strife.
+
+When forces of liberation entered Greece they found that the retreating Germans had destroyed virtually all the railways, roads, port facilities, communications, and merchant marine. More than a thousand villages had been burned. Eighty-five per cent of the children were tubercular. Livestock, poultry, and draft animals had almost disappeared. Inflation had wiped out practically all savings.
+
+As a result of these tragic conditions, a militant minority, exploiting human want and misery, was able to create political chaos which, until now, has made economic recovery impossible.
+
+Greece is today without funds to finance the importation of those goods which are essential to bare subsistence. Under these circumstances the people of Greece cannot make progress in solving their problems of reconstruction. Greece is in desperate need of financial and economic assistance to enable it to resume purchases of food, clothing, fuel and seeds.
+
+The Greek Government has also asked for the assistance of experienced American administrators, economists and technicians to insure that the financial and other aid given to Greece shall be used effectively in creating a stable and self-sustaining economy and in improving its public administration.
+
+The very existence of the Greek state is today threatened by the terrorist activities of several thousand armed men, led by Communists, who defy the government's authority at a number of points, particularly along the northern boundaries.
+
+Meanwhile, the Greek Government is unable to cope with the situation. The Greek army is small and poorly equipped. It needs supplies and equipment if it is to restore the authority of the government throughout Greek territory.
+
+Greece's neighbor, Turkey, also deserves our attention.
+
+The future of Turkey as an independent and economically sound state is clearly no less important to the freedom-loving peoples of the world than the future of Greece.
+
+One of the primary objectives of the foreign policy of the United States is the creation of conditions in which we and other nations will be able to work out a way of life free from coercion.
+
+At the present moment in world history nearly every nation must choose between alternative ways of life.
+
+One way of life is based upon the will of the majority, and is distinguished by free institutions, representative government, free elections, guarantees of individual liberty, freedom of speech and religion, and freedom from political oppression.
+
+The second way of life is based upon the will of a minority forcibly imposed upon the majority. It relies upon terror and oppression, a controlled press and radio, fixed elections, and the suppression of personal freedoms.
+
+I believe that it must be the policy of the United States to support free peoples who are resisting attempted subjugation by armed minorities or by outside pressures.
+
+I believe that we must assist free peoples to work out their own destinies in their own way.
+
+I believe that our help should be primarily through economic and financial aid which is essential to economic stability and orderly political processes.
+
+It is necessary only to glance at a map to realize that the survival and integrity of the Greek nation are of grave importance in a much wider situation.
+
+If Greece should fall under the control of an armed minority, the effect upon its neighbor, Turkey, would be immediate and serious.
+
+I therefore ask the Congress to provide authority for assistance to Greece and Turkey in the amount of $400,000,000.
+
+If we falter in our leadership, we may endanger the peace of the world -- and we shall surely endanger the welfare of our own nation.</div>
+      </details>
+      <label for="firstRead"><strong>After the first read: What does Truman want Congress to do?</strong></label>
+      <textarea id="firstRead" data-save="true" placeholder="Write 2–3 sentences."></textarea>
+      <div class="toolbar">
+        <button class="btn secondary" id="saveNowBtn">Save to this device</button>
+        <button class="btn secondary" id="resetBtn">Reset assignment</button>
+        <span id="saveStatus" class="save-status">Work saves automatically on this device.</span>
+      </div>
+    </section>
+
+    <section class="card" id="chunkSection">
+      <div class="sticky-tools">
+        <h2>Part 3 · Teacher-Led Chunk Work</h2>
+        <p class="small">Move through the chunks together as a class. For each chunk, explain the new topic and how it changes from the previous chunk.</p>
+        <div class="directions"><strong>Writing Requirement:</strong> Use at least <strong>one vocabulary term</strong> in each chunk’s main idea for full completion credit.</div>
+        <div class="chunk-nav">
+          <button data-target="chunk1">Chunk 1</button>
+          <button data-target="chunk2">Chunk 2</button>
+          <button data-target="chunk3">Chunk 3</button>
+          <button data-target="chunk4">Chunk 4</button>
+          <button data-target="chunk5">Chunk 5</button>
+          <button data-target="chunk6">Chunk 6</button>
+          <button data-target="chunk7">Chunk 7</button>
+        </div>
+      </div>
+
+      <section id="chunk1" class="chunk active">
+        <div class="chunk-header"><h3>Chunk 1 · Greece in Crisis</h3><span class="pill">Problem is introduced</span></div>
+        <div class="speech">The <span class="given-highlight">gravity of the situation</span> which confronts the world today necessitates my appearance before a joint session of the Congress. The foreign policy and the <span class="given-highlight">national security</span> of this country are involved.
+
+One aspect of the present situation... <span class="given-highlight">concerns Greece and Turkey</span>.
+
+The United States has received... an <span class="given-highlight">urgent appeal for financial and economic assistance</span>.
+
+Greece... has suffered <span class="given-highlight">invasion</span>, <span class="given-highlight">occupation</span>, and <span class="given-highlight">internal strife</span>.
+
+A militant minority... was able to create <span class="given-highlight">political chaos</span>.
+
+Greece is in <span class="given-highlight">desperate need of financial and economic assistance</span>.</div>
+        <div class="prompt-box">Class discussion prompt: Why does Truman start with these details? Why make Congress picture Greece this way?</div>
+        <div class="explain-grid">
+          <div>
+            <label><strong>What is the new topic of this chunk of text?</strong></label>
+            <textarea data-save="true" data-save-key="chunk1-topic" placeholder="Explain what Truman begins talking about in this chunk."></textarea>
+          </div>
+          <div>
+            <label><strong>How is this different from the previous chunk?</strong></label>
+            <textarea data-save="true" data-save-key="chunk1-change" placeholder="Explain how the focus shifts here."></textarea>
+          </div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. What is the main focus of this section?</strong>
+              <label><input type="radio" name="c1q1" value="A" data-save="true"> A. U.S. military strength</label>
+              <label><input type="radio" name="c1q1" value="B" data-correct="true" data-save="true"> B. Greece’s economic and political crisis</label>
+              <label><input type="radio" name="c1q1" value="C" data-save="true"> C. The United Nations</label>
+              <label><input type="radio" name="c1q1" value="D" data-save="true"> D. Trade policies</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. Why does Truman describe Greece this way?</strong>
+              <label><input type="radio" name="c1q2" value="A" data-save="true"> A. To entertain the audience</label>
+              <label><input type="radio" name="c1q2" value="B" data-correct="true" data-save="true"> B. To show urgency and need for help</label>
+              <label><input type="radio" name="c1q2" value="C" data-save="true"> C. To criticize Greece</label>
+              <label><input type="radio" name="c1q2" value="D" data-save="true"> D. To explain geography</label>
+            </div>
+            <button class="btn check-btn" data-chunk="1">Check MC Answers</button>
+            <div class="feedback" id="feedback1"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>Truman is explaining that...</p>
+            <p>This section shows that...</p>
+            <p>Truman argues that Greece is...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk1-main" placeholder="Write one main idea sentence for Chunk 1. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box">
+          <label><strong>Write your partner’s idea in one sentence.</strong></label>
+          <textarea data-save="true" data-save-key="chunk1-partner" placeholder="Summarize your partner's idea."></textarea>
+        </div>
+      </section>
+
+      <section id="chunk2" class="chunk">
+        <div class="chunk-header"><h3>Chunk 2 · Why the U.S. Must Act</h3><span class="pill">Need for action is built</span></div>
+        <div class="speech">The Greek Government has also asked for the assistance of experienced American administrators, economists and technicians to insure that the financial and other aid given to Greece shall be used effectively in creating a stable and self-sustaining economy and in improving its public administration.
+
+The very existence of the Greek state is today threatened by the terrorist activities of several thousand armed men, led by Communists, who defy the government's authority.
+
+Meanwhile, the Greek Government is unable to cope with the situation. The Greek army is small and poorly equipped.
+
+The United States must supply that assistance.
+
+There is no other country to which democratic Greece can turn.
+
+The British Government, which has been helping Greece, can give no further financial or economic aid.</div>
+        <div class="prompt-box">Directions: Below are 8 possible words or phrases. Select the <strong>5 most relevant</strong> for understanding this chunk. If you click a weaker choice, you will get feedback, but it will not be added.</div>
+        <div class="option-grid chunk2-options">
+          <button type="button" class="highlight-option chunk2-choice" data-key="admins" data-important="true">assistance of experienced American administrators</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="economy" data-important="true">stable and self-sustaining economy</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="terror" data-important="true">threatened by terrorist activities</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="communists" data-important="false">led by Communists</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="cope" data-important="true">unable to cope with the situation</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="usmust" data-important="true">The United States must supply that assistance</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="noother" data-important="true">There is no other country</button>
+          <button type="button" class="highlight-option chunk2-choice" data-key="britain" data-important="false">British Government can give no further aid</button>
+        </div>
+        <div class="feedback" id="chunk2ChoiceFeedback"></div>
+        <div class="small" id="chunk2ChoiceCount">Selected: 0 of 5 strongest choices</div>
+        <div class="explain-grid">
+          <div>
+            <label><strong>What is the new topic of this chunk of text?</strong></label>
+            <textarea data-save="true" data-save-key="chunk2-topic" placeholder="Explain what Truman begins talking about in this chunk."></textarea>
+          </div>
+          <div>
+            <label><strong>How is this different from the previous chunk?</strong></label>
+            <textarea data-save="true" data-save-key="chunk2-change" placeholder="Explain how the focus shifts here."></textarea>
+          </div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. Why must the U.S. help Greece?</strong>
+              <label><input type="radio" name="c2q1" value="A" data-save="true"> A. It wants control of Greece</label>
+              <label><input type="radio" name="c2q1" value="B" data-correct="true" data-save="true"> B. No other country can provide support</label>
+              <label><input type="radio" name="c2q1" value="C" data-save="true"> C. Greece asked for military control</label>
+              <label><input type="radio" name="c2q1" value="D" data-save="true"> D. The UN requires it</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. What is Truman’s argument here?</strong>
+              <label><input type="radio" name="c2q2" value="A" data-correct="true" data-save="true"> A. The U.S. has no choice but to act</label>
+              <label><input type="radio" name="c2q2" value="B" data-save="true"> B. Greece should solve its own problems</label>
+              <label><input type="radio" name="c2q2" value="C" data-save="true"> C. Britain should continue helping</label>
+              <label><input type="radio" name="c2q2" value="D" data-save="true"> D. The UN will fix everything</label>
+            </div>
+            <button class="btn check-btn" data-chunk="2">Check MC Answers</button>
+            <div class="feedback" id="feedback2"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>In this section, Truman argues that...</p>
+            <p>Truman shifts from describing the crisis to showing that...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk2-main" placeholder="Write one main idea sentence for Chunk 2. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box">
+          <label><strong>Write your partner’s idea in one sentence.</strong></label>
+          <textarea data-save="true" data-save-key="chunk2-partner" placeholder="Summarize your partner's idea."></textarea>
+        </div>
+      </section>
+
+      <section id="chunk3" class="chunk">
+        <div class="chunk-header"><h3>Chunk 3 · Turkey and Bigger Stakes</h3><span class="pill">Issue expands outward</span></div>
+        <div class="speech interactive-text" data-highlight-group="chunk3">Greece's neighbor, Turkey, also deserves our attention.
+
+The future of Turkey as an independent and economically sound state is clearly no less important to the freedom-loving peoples of the world than the future of Greece.
+
+Nevertheless, Turkey now needs our support.
+
+The British government has informed us that, owing to its own difficulties, it can no longer extend financial or economic aid to Turkey.
+
+As in the case of Greece, if Turkey is to have the assistance it needs, the United States must supply it. We are the only country able to provide that help.</div>
+        <div class="toolbar"><span>Highlight tools:</span><button class="btn secondary highlight-tool tool-active" data-target="chunk3" data-color="evidence">Important evidence</button><button class="btn secondary highlight-tool" data-target="chunk3" data-color="claim">Main idea / claim</button><button class="btn secondary clear-highlight" data-target="chunk3">Clear highlights</button></div>
+        <div class="prompt-box">Class discussion prompt: Why does Truman add Turkey? What happens to the scale of the speech here?</div>
+        <div class="explain-grid">
+          <div><label><strong>What is the new topic of this chunk of text?</strong></label><textarea data-save="true" data-save-key="chunk3-topic"></textarea></div>
+          <div><label><strong>How is this different from the previous chunk?</strong></label><textarea data-save="true" data-save-key="chunk3-change"></textarea></div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. Why is Turkey important?</strong>
+              <label><input type="radio" name="c3q1" value="A" data-save="true"> A. It is wealthy</label>
+              <label><input type="radio" name="c3q1" value="B" data-correct="true" data-save="true"> B. It affects stability in a larger region</label>
+              <label><input type="radio" name="c3q1" value="C" data-save="true"> C. It controls trade routes only</label>
+              <label><input type="radio" name="c3q1" value="D" data-save="true"> D. It is already stable</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. What is Truman doing here?</strong>
+              <label><input type="radio" name="c3q2" value="A" data-save="true"> A. Narrowing the issue</label>
+              <label><input type="radio" name="c3q2" value="B" data-correct="true" data-save="true"> B. Expanding the importance</label>
+              <label><input type="radio" name="c3q2" value="C" data-save="true"> C. Ending the argument</label>
+              <label><input type="radio" name="c3q2" value="D" data-save="true"> D. Giving background only</label>
+            </div>
+            <button class="btn check-btn" data-chunk="3">Check MC Answers</button>
+            <div class="feedback" id="feedback3"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>By bringing up Turkey, Truman shows that...</p>
+            <p>This chunk expands the argument by...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk3-main" placeholder="Write one main idea sentence for Chunk 3. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box"><label><strong>Write your partner’s idea in one sentence.</strong></label><textarea data-save="true" data-save-key="chunk3-partner"></textarea></div>
+      </section>
+
+      <section id="chunk4" class="chunk">
+        <div class="chunk-header"><h3>Chunk 4 · Two Ways of Life</h3><span class="pill">Core Cold War framing</span></div>
+        <div class="speech interactive-text" data-highlight-group="chunk4">One of the primary objectives of the foreign policy of the United States is the creation of conditions in which we and other nations will be able to work out a way of life free from coercion.
+
+At the present moment in world history nearly every nation must choose between alternative ways of life.
+
+One way of life is based upon the will of the majority, and is distinguished by free institutions, representative government, free elections, guarantees of individual liberty, freedom of speech and religion, and freedom from political oppression.
+
+The second way of life is based upon the will of a minority forcibly imposed upon the majority. It relies upon terror and oppression, a controlled press and radio, fixed elections, and the suppression of personal freedoms.</div>
+        <div class="toolbar"><span>Highlight tools:</span><button class="btn secondary highlight-tool tool-active" data-target="chunk4" data-color="evidence">Important evidence</button><button class="btn secondary highlight-tool" data-target="chunk4" data-color="claim">Main idea / claim</button><button class="btn secondary clear-highlight" data-target="chunk4">Clear highlights</button></div>
+        <div class="prompt-box">Whole-class stop: This is the intellectual heart of the speech. Ask: What are the two systems? How does Truman want the audience to judge them?</div>
+        <div class="response-grid">
+          <div class="mini-card">
+            <h4>Claim vs. Evidence Check</h4>
+            <label><strong>Which sentence is Truman’s main claim in this chunk?</strong></label>
+            <input type="text" data-save="true" data-save-key="chunk4-claim-check" placeholder="Write or paraphrase the claim sentence.">
+            <label style="margin-top:10px;"><strong>Which details act as evidence or explanation for that claim?</strong></label>
+            <textarea data-save="true" data-save-key="chunk4-evidence-check" placeholder="List the details that support the claim."></textarea>
+          </div>
+          <div class="mini-card">
+            <h4>Cold War Framing</h4>
+            <label><strong>Which side of this conflict is Truman clearly supporting?</strong></label>
+            <textarea data-save="true" data-save-key="chunk4-side" placeholder="Explain which side Truman supports."></textarea>
+            <label><strong>How does he make one side look better?</strong></label>
+            <textarea data-save="true" data-save-key="chunk4-bias" placeholder="Explain how Truman persuades his audience."></textarea>
+          </div>
+        </div>
+        <div class="explain-grid">
+          <div><label><strong>What is the new topic of this chunk of text?</strong></label><textarea data-save="true" data-save-key="chunk4-topic"></textarea></div>
+          <div><label><strong>How is this different from the previous chunk?</strong></label><textarea data-save="true" data-save-key="chunk4-change"></textarea></div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. What is Truman mainly doing here?</strong>
+              <label><input type="radio" name="c4q1" value="A" data-save="true"> A. Giving economic data</label>
+              <label><input type="radio" name="c4q1" value="B" data-correct="true" data-save="true"> B. Comparing two systems</label>
+              <label><input type="radio" name="c4q1" value="C" data-save="true"> C. Describing Greece</label>
+              <label><input type="radio" name="c4q1" value="D" data-save="true"> D. Asking for money</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. What are the two systems?</strong>
+              <label><input type="radio" name="c4q2" value="A" data-correct="true" data-save="true"> A. Democracy vs. totalitarianism</label>
+              <label><input type="radio" name="c4q2" value="B" data-save="true"> B. Capitalism vs. trade</label>
+              <label><input type="radio" name="c4q2" value="C" data-save="true"> C. War vs. peace</label>
+              <label><input type="radio" name="c4q2" value="D" data-save="true"> D. Europe vs. Asia</label>
+            </div>
+            <button class="btn check-btn" data-chunk="4">Check MC Answers</button>
+            <div class="feedback" id="feedback4"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>In this chunk, Truman frames the Cold War as...</p>
+            <p>Truman compares two ways of life in order to...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk4-main" placeholder="Write one main idea sentence for Chunk 4. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box"><label><strong>Write your partner’s idea in one sentence.</strong></label><textarea data-save="true" data-save-key="chunk4-partner"></textarea></div>
+      </section>
+
+      <section id="chunk5" class="chunk">
+        <div class="chunk-header"><h3>Chunk 5 · The Policy</h3><span class="pill">Doctrine is stated clearly</span></div>
+        <div class="speech interactive-text" data-highlight-group="chunk5">I believe that it must be the policy of the United States to support free peoples who are resisting attempted subjugation by armed minorities or by outside pressures.
+
+I believe that we must assist free peoples to work out their own destinies in their own way.
+
+I believe that our help should be primarily through economic and financial aid which is essential to economic stability and orderly political processes.</div>
+        <div class="toolbar"><span>Highlight tools:</span><button class="btn secondary highlight-tool tool-active" data-target="chunk5" data-color="evidence">Important evidence</button><button class="btn secondary highlight-tool" data-target="chunk5" data-color="claim">Main idea / claim</button><button class="btn secondary clear-highlight" data-target="chunk5">Clear highlights</button></div>
+        <div class="prompt-box">Class discussion prompt: This is the doctrine itself. What exactly is the U.S. committing itself to do?</div>
+        <div class="explain-grid">
+          <div><label><strong>What is the new topic of this chunk of text?</strong></label><textarea data-save="true" data-save-key="chunk5-topic"></textarea></div>
+          <div><label><strong>How is this different from the previous chunk?</strong></label><textarea data-save="true" data-save-key="chunk5-change"></textarea></div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. What is Truman proposing?</strong>
+              <label><input type="radio" name="c5q1" value="A" data-save="true"> A. Military invasion</label>
+              <label><input type="radio" name="c5q1" value="B" data-correct="true" data-save="true"> B. Economic and financial support</label>
+              <label><input type="radio" name="c5q1" value="C" data-save="true"> C. Isolation</label>
+              <label><input type="radio" name="c5q1" value="D" data-save="true"> D. Trade agreements</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. Who is the U.S. helping?</strong>
+              <label><input type="radio" name="c5q2" value="A" data-save="true"> A. All nations</label>
+              <label><input type="radio" name="c5q2" value="B" data-correct="true" data-save="true"> B. Free peoples resisting control</label>
+              <label><input type="radio" name="c5q2" value="C" data-save="true"> C. Only Europe</label>
+              <label><input type="radio" name="c5q2" value="D" data-save="true"> D. Only allies</label>
+            </div>
+            <button class="btn check-btn" data-chunk="5">Check MC Answers</button>
+            <div class="feedback" id="feedback5"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>Truman’s policy is that the United States should...</p>
+            <p>This section states that the U.S. will...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk5-main" placeholder="Write one main idea sentence for Chunk 5. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box"><label><strong>Write your partner’s idea in one sentence.</strong></label><textarea data-save="true" data-save-key="chunk5-partner"></textarea></div>
+      </section>
+
+      <section id="chunk6" class="chunk">
+        <div class="chunk-header"><h3>Chunk 6 · Consequences of Inaction</h3><span class="pill">Cause-and-effect warning</span></div>
+        <div class="speech interactive-text" data-highlight-group="chunk6">It is necessary only to glance at a map to realize that the survival and integrity of the Greek nation are of grave importance in a much wider situation.
+
+If Greece should fall under the control of an armed minority, the effect upon its neighbor, Turkey, would be immediate and serious.
+
+Moreover, the disappearance of Greece as an independent state would have a profound effect upon those countries in Europe whose peoples are struggling against great difficulties to maintain their freedoms and their independence.
+
+Should we fail to aid Greece and Turkey in this fateful hour, the effect will be far reaching to the West as well as to the East.
+
+We must take immediate and resolute action.</div>
+        <div class="toolbar"><span>Highlight tools:</span><button class="btn secondary highlight-tool tool-active" data-target="chunk6" data-color="evidence">Important evidence</button><button class="btn secondary highlight-tool" data-target="chunk6" data-color="claim">Main idea / claim</button><button class="btn secondary clear-highlight" data-target="chunk6">Clear highlights</button></div>
+        <div class="prompt-box">Class discussion prompt: What does Truman think will happen if the U.S. does nothing? Why is this broader than just Greece?</div>
+        <div class="explain-grid">
+          <div><label><strong>What is the new topic of this chunk of text?</strong></label><textarea data-save="true" data-save-key="chunk6-topic"></textarea></div>
+          <div><label><strong>How is this different from the previous chunk?</strong></label><textarea data-save="true" data-save-key="chunk6-change"></textarea></div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. What is Truman warning about?</strong>
+              <label><input type="radio" name="c6q1" value="A" data-save="true"> A. Economic collapse only</label>
+              <label><input type="radio" name="c6q1" value="B" data-correct="true" data-save="true"> B. Spread of instability and loss of freedom</label>
+              <label><input type="radio" name="c6q1" value="C" data-save="true"> C. Military defeat</label>
+              <label><input type="radio" name="c6q1" value="D" data-save="true"> D. Trade problems</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. What type of reasoning is this?</strong>
+              <label><input type="radio" name="c6q2" value="A" data-correct="true" data-save="true"> A. Cause and effect</label>
+              <label><input type="radio" name="c6q2" value="B" data-save="true"> B. Compare and contrast</label>
+              <label><input type="radio" name="c6q2" value="C" data-save="true"> C. Description</label>
+              <label><input type="radio" name="c6q2" value="D" data-save="true"> D. Definition</label>
+            </div>
+            <button class="btn check-btn" data-chunk="6">Check MC Answers</button>
+            <div class="feedback" id="feedback6"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>Truman warns that if the U.S. does nothing...</p>
+            <p>This section argues that failing to act would...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk6-main" placeholder="Write one main idea sentence for Chunk 6. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box"><label><strong>Write your partner’s idea in one sentence.</strong></label><textarea data-save="true" data-save-key="chunk6-partner"></textarea></div>
+      </section>
+
+      <section id="chunk7" class="chunk">
+        <div class="chunk-header"><h3>Chunk 7 · Call to Action</h3><span class="pill">Argument becomes policy request</span></div>
+        <div class="speech interactive-text" data-highlight-group="chunk7">I therefore ask the Congress to provide authority for assistance to Greece and Turkey in the amount of $400,000,000.
+
+In addition to funds, I ask the Congress to authorize the detail of American civilian and military personnel to Greece and Turkey.
+
+Finally, I ask that the Congress provide authority which will permit the speediest and most effective use of such funds.
+
+This is a serious course upon which we embark.
+
+If we falter in our leadership, we may endanger the peace of the world -- and we shall surely endanger the welfare of our own nation.</div>
+        <div class="toolbar"><span>Highlight tools:</span><button class="btn secondary highlight-tool tool-active" data-target="chunk7" data-color="evidence">Important evidence</button><button class="btn secondary highlight-tool" data-target="chunk7" data-color="claim">Main idea / claim</button><button class="btn secondary clear-highlight" data-target="chunk7">Clear highlights</button></div>
+        <div class="prompt-box">Class discussion prompt: How does Truman end the speech? What does he want Congress to do right now?</div>
+        <div class="explain-grid">
+          <div><label><strong>What is the new topic of this chunk of text?</strong></label><textarea data-save="true" data-save-key="chunk7-topic"></textarea></div>
+          <div><label><strong>How is this different from the previous chunk?</strong></label><textarea data-save="true" data-save-key="chunk7-change"></textarea></div>
+        </div>
+        <div class="response-grid">
+          <div>
+            <div class="mc-question mini-card">
+              <strong>1. What is Truman asking for?</strong>
+              <label><input type="radio" name="c7q1" value="A" data-save="true"> A. Troops</label>
+              <label><input type="radio" name="c7q1" value="B" data-correct="true" data-save="true"> B. Money and support</label>
+              <label><input type="radio" name="c7q1" value="C" data-save="true"> C. Trade agreements</label>
+              <label><input type="radio" name="c7q1" value="D" data-save="true"> D. Alliances</label>
+            </div>
+            <div class="mc-question mini-card">
+              <strong>2. Why is this important?</strong>
+              <label><input type="radio" name="c7q2" value="A" data-save="true"> A. It ends the speech</label>
+              <label><input type="radio" name="c7q2" value="B" data-correct="true" data-save="true"> B. It turns argument into action</label>
+              <label><input type="radio" name="c7q2" value="C" data-save="true"> C. It summarizes history</label>
+              <label><input type="radio" name="c7q2" value="D" data-save="true"> D. It repeats earlier ideas</label>
+            </div>
+            <button class="btn check-btn" data-chunk="7">Check MC Answers</button>
+            <div class="feedback" id="feedback7"></div>
+          </div>
+          <div class="sentence-stems">
+            <p><strong>Main idea sentence stems:</strong></p>
+            <p>In the final section, Truman asks Congress to...</p>
+            <p>Truman ends by turning his argument into...</p>
+            <details><summary>Vocabulary you may use</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+            <textarea data-save="true" data-save-key="chunk7-main" placeholder="Write one main idea sentence for Chunk 7. Include at least one vocabulary term."></textarea>
+          </div>
+        </div>
+        <div class="partner-box"><label><strong>Write your partner’s idea in one sentence.</strong></label><textarea data-save="true" data-save-key="chunk7-partner"></textarea></div>
+      </section>
+    </section>
+
+    <section class="card locked-section" id="synthesisSection">
+      <h2>Part 4 · Synthesis Before the Final Write</h2>
+      <div class="directions"><strong>Directions:</strong> Before the final paragraph, decide which chunk is most important to Truman’s argument and explain why.</div>
+      <label><strong>Which chunk is MOST important to Truman’s argument? Why?</strong></label>
+      <textarea data-save="true" data-save-key="most-important-chunk" placeholder="Name the chunk and explain why it matters most."></textarea>
+    </section>
+
+    <section class="card locked-section" id="finalSection">
+      <h2>Part 5 · Final Analysis</h2>
+      <div class="directions"><strong>Prompt:</strong> Explain Truman’s argument about the role of the United States in the early Cold War. Use evidence from at least 2–3 chunks and explain why Truman believes action is necessary.<br><br><strong>Requirement:</strong> Use at least <strong>four vocabulary terms</strong> correctly in your response for full completion credit. Use at least one specific quote or clearly referenced detail from the document.</div>
+      <details><summary>Vocabulary reference list</summary><div class="small">containment, totalitarian, subjugation, coercion, integrity, aggressive movements, free peoples, oppression, economic stability, political processes, national security, totalitarian regime</div></details>
+      <textarea data-save="true" data-save-key="final-analysis" placeholder="Write your paragraph here."></textarea>
+      <div class="toolbar">
+        <button class="btn secondary" id="downloadHtmlBtn">Download saved HTML copy</button>
+        <button class="btn" id="pdfBtn">Save to PDF</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'truman-doctrine-close-read-v4';
+    const VOCAB_TERMS = [
+      'containment','totalitarian','subjugation','coercion','integrity','aggressive movements',
+      'free peoples','oppression','economic stability','political processes','national security','totalitarian regime'
+    ];
+    const saveStatus = document.getElementById('saveStatus');
+    const completionScoreEl = document.getElementById('completionScore');
+    const vocabProgressEl = document.getElementById('vocabProgress');
+    const activeHighlightTool = {};
+    const firstReadSection = document.getElementById('firstReadSection');
+    const chunkSection = document.getElementById('chunkSection');
+    const synthesisSection = document.getElementById('synthesisSection');
+    const finalSection = document.getElementById('finalSection');
+    const vocabLockMessage = document.getElementById('vocabLockMessage');
+
+    function updateSaveStatus(message = 'Saved on this device.') {
+      if (!saveStatus) return;
+      saveStatus.textContent = message;
+      window.clearTimeout(updateSaveStatus._timer);
+      updateSaveStatus._timer = window.setTimeout(() => {
+        saveStatus.textContent = 'Work saves automatically on this device.';
+      }, 1600);
+    }
+
+    function getFieldKey(el, index) {
+      return el.dataset.saveKey || el.name || el.id || `field-${index}`;
+    }
+
+    function countDistinctVocabUsage(text) {
+      const lower = (text || '').toLowerCase();
+      return VOCAB_TERMS.filter(term => lower.includes(term)).length;
+    }
+
+    function getState() {
+      const state = { values: {}, highlights: {}, tools: {}, vocabDrops: {} };
+      const fields = document.querySelectorAll('textarea[data-save="true"], input[data-save="true"], select[data-save="true"]');
+      fields.forEach((el, index) => {
+        const key = getFieldKey(el, index);
+        if (el.type === 'checkbox' || el.type === 'radio') state.values[key] = el.checked;
+        else state.values[key] = el.value;
+      });
+      document.querySelectorAll('.interactive-text').forEach(el => {
+        const group = el.dataset.highlightGroup;
+        state.highlights[group] = el.innerHTML;
+        state.tools[group] = activeHighlightTool[group] || 'evidence';
+      });
+      document.querySelectorAll('.drop-zone').forEach((zone, index) => {
+        state.vocabDrops[`drop-${index}`] = {
+          answer: zone.querySelector('.drop-answer').textContent,
+          className: zone.className
+        };
+      });
+      return state;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+      updateSaveStatus();
+      updateCompletionScore();
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const state = JSON.parse(raw);
+        const fields = document.querySelectorAll('textarea[data-save="true"], input[data-save="true"], select[data-save="true"]');
+        fields.forEach((el, index) => {
+          const key = getFieldKey(el, index);
+          if (!Object.prototype.hasOwnProperty.call(state.values || {}, key)) return;
+          if (el.type === 'checkbox' || el.type === 'radio') el.checked = Boolean(state.values[key]);
+          else el.value = state.values[key];
+        });
+        document.querySelectorAll('.interactive-text').forEach(el => {
+          const group = el.dataset.highlightGroup;
+          if (state.highlights && state.highlights[group]) el.innerHTML = state.highlights[group];
+          activeHighlightTool[group] = (state.tools && state.tools[group]) || 'evidence';
+          syncToolButtons(group);
+        });
+        document.querySelectorAll('.drop-zone').forEach((zone, index) => {
+          const saved = state.vocabDrops && state.vocabDrops[`drop-${index}`];
+          if (saved) {
+            zone.className = saved.className;
+            zone.querySelector('.drop-answer').textContent = saved.answer;
+            if (saved.className.includes('correct')) {
+              zone.style.pointerEvents = 'none';
+            }
+          }
+        });
+        document.querySelectorAll('.draggable-term').forEach(term => {
+          const matched = Array.from(document.querySelectorAll('.drop-zone.correct .drop-answer')).some(el => el.textContent === term.dataset.term);
+          if (matched) {
+            term.classList.add('used');
+            term.setAttribute('draggable', 'false');
+          }
+        });
+        updateVocabProgress();
+      } catch (error) {
+        console.error('Could not load saved state', error);
+      }
+    }
+
+    function syncToolButtons(group) {
+      const active = activeHighlightTool[group] || 'evidence';
+      document.querySelectorAll(`.highlight-tool[data-target="${group}"]`).forEach(btn => {
+        btn.classList.toggle('tool-active', btn.dataset.color === active);
+      });
+    }
+
+    function normalizeHighlights(container) {
+      container.normalize();
+      container.querySelectorAll('.selected-highlight').forEach(span => {
+        if (!span.textContent.trim()) span.remove();
+      });
+    }
+
+    function wrapRangeInHighlight(range, color) {
+      if (range.collapsed) return false;
+      const span = document.createElement('span');
+      span.className = color === 'claim' ? 'selected-highlight claim' : 'selected-highlight';
+      try {
+        range.surroundContents(span);
+      } catch (error) {
+        const contents = range.extractContents();
+        span.appendChild(contents);
+        range.insertNode(span);
+      }
+      return true;
+    }
+
+    function clearHighlightsFor(group) {
+      const container = document.querySelector(`[data-highlight-group="${group}"]`);
+      if (!container) return;
+      container.querySelectorAll('.selected-highlight').forEach(span => {
+        const parent = span.parentNode;
+        while (span.firstChild) parent.insertBefore(span.firstChild, span);
+        parent.removeChild(span);
+      });
+      normalizeHighlights(container);
+      saveState();
+    }
+
+    function setupNavigation() {
+      const buttons = document.querySelectorAll('.chunk-nav button');
+      const chunks = document.querySelectorAll('.chunk');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          chunks.forEach(chunk => chunk.classList.remove('active'));
+          document.getElementById(target)?.classList.add('active');
+          window.scrollTo({ top: document.querySelector('.sticky-tools').offsetTop - 10, behavior: 'smooth' });
+        });
+      });
+    }
+
+    function setupMCChecks() {
+      document.querySelectorAll('.check-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const chunkNum = button.dataset.chunk;
+          const feedback = document.getElementById(`feedback${chunkNum}`);
+          const groups = {};
+          document.querySelectorAll(`input[name^="c${chunkNum}q"]`).forEach(input => {
+            if (!groups[input.name]) groups[input.name] = [];
+            groups[input.name].push(input);
+          });
+          let correct = 0;
+          let total = 0;
+          Object.values(groups).forEach(group => {
+            total += 1;
+            const selected = group.find(input => input.checked);
+            if (selected && selected.dataset.correct === 'true') correct += 1;
+          });
+          if (!feedback) return;
+          feedback.classList.add('show');
+          if (correct === total && total > 0) {
+            feedback.className = 'feedback show good';
+            feedback.textContent = `Nice work. You got ${correct} out of ${total} correct.`;
+          } else {
+            feedback.className = 'feedback show warn';
+            feedback.textContent = `You got ${correct} out of ${total} correct. Re-read the chunk and discuss with a partner.`;
+          }
+          saveState();
+        });
+      });
+    }
+
+    function setupHighlightTools() {
+      document.querySelectorAll('.interactive-text').forEach(container => {
+        const group = container.dataset.highlightGroup;
+        activeHighlightTool[group] = activeHighlightTool[group] || 'evidence';
+        syncToolButtons(group);
+        container.addEventListener('mouseup', () => {
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) return;
+          const range = selection.getRangeAt(0);
+          if (range.collapsed) return;
+          if (!container.contains(range.commonAncestorContainer)) return;
+          const applied = wrapRangeInHighlight(range, activeHighlightTool[group] || 'evidence');
+          selection.removeAllRanges();
+          if (applied) {
+            normalizeHighlights(container);
+            saveState();
+          }
+        });
+      });
+      document.querySelectorAll('.highlight-tool').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          activeHighlightTool[target] = btn.dataset.color;
+          syncToolButtons(target);
+          saveState();
+        });
+      });
+      document.querySelectorAll('.clear-highlight').forEach(btn => {
+        btn.addEventListener('click', () => clearHighlightsFor(btn.dataset.target));
+      });
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function shuffleDropZones(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const zones = Array.from(container.children);
+      const shuffled = shuffleArray(zones.slice());
+      shuffled.forEach(node => container.appendChild(node));
+    }
+
+    function updateVocabProgress() {
+      const correct = document.querySelectorAll('.drop-zone.correct').length;
+      if (vocabProgressEl) vocabProgressEl.textContent = `${correct} / 12 correct`;
+    }
+
+    function setupVocabDragDrop() {
+      let draggedTerm = null;
+
+      shuffleDropZones('dropZonesA');
+      shuffleDropZones('dropZonesB');
+
+      document.querySelectorAll('.draggable-term').forEach(term => {
+        term.addEventListener('dragstart', () => {
+          if (term.classList.contains('used')) return;
+          draggedTerm = term;
+        });
+      });
+
+      document.querySelectorAll('.drop-zone').forEach(zone => {
+        zone.addEventListener('dragover', e => e.preventDefault());
+
+        zone.addEventListener('drop', e => {
+          e.preventDefault();
+          if (!draggedTerm) return;
+          if (zone.classList.contains('correct')) return;
+          if (draggedTerm.dataset.set !== zone.dataset.set) return;
+
+          const dropped = draggedTerm.dataset.term;
+          const correct = zone.dataset.answer;
+          const answerBox = zone.querySelector('.drop-answer');
+
+          zone.classList.remove('incorrect');
+
+          if (dropped === correct) {
+            answerBox.textContent = dropped;
+            zone.classList.add('correct');
+            draggedTerm.classList.add('used');
+            draggedTerm.setAttribute('draggable', 'false');
+            zone.style.pointerEvents = 'none';
+            updateUnlockState();
+            updateVocabProgress();
+          } else {
+            const rect = draggedTerm.getBoundingClientRect();
+            const ghost = draggedTerm.cloneNode(true);
+            ghost.style.position = 'fixed';
+            ghost.style.left = rect.left + 'px';
+            ghost.style.top = rect.top + 'px';
+            ghost.style.width = rect.width + 'px';
+            ghost.style.opacity = '0.8';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+            document.body.appendChild(ghost);
+
+            const zoneRect = zone.getBoundingClientRect();
+            ghost.style.transform = `translate(${zoneRect.left - rect.left}px, ${zoneRect.top - rect.top}px)`;
+
+            setTimeout(() => {
+              ghost.style.transform = 'translate(0,0)';
+              ghost.style.opacity = '0';
+            }, 10);
+
+            setTimeout(() => ghost.remove(), 400);
+
+            zone.classList.add('incorrect');
+            setTimeout(() => zone.classList.remove('incorrect'), 500);
+          }
+
+          draggedTerm = null;
+          updateUnlockState();
+          updateVocabProgress();
+          saveState();
+        });
+      });
+    }
+
+    function setupChunk2Choices() {
+      const choices = Array.from(document.querySelectorAll('.chunk2-choice'));
+      const feedback = document.getElementById('chunk2ChoiceFeedback');
+      const countEl = document.getElementById('chunk2ChoiceCount');
+      const selected = new Set();
+      const messages = {
+        admins: 'This matters because Truman is not only asking for money. He is arguing that the United States should help direct how Greece rebuilds.',
+        economy: 'This matters because Truman says the goal is long-term recovery and economic stability, not just temporary relief.',
+        terror: 'This matters because it explains the immediate danger Truman wants Congress to notice.',
+        communists: 'This is relevant, but it is less important than the strongest choices. The bigger point here is that Greece is unstable and needs outside help.',
+        cope: 'This matters because it directly supports Truman’s argument that Greece cannot solve the problem by itself.',
+        usmust: 'This is one of the strongest choices because it states Truman’s main claim in this chunk very directly.',
+        noother: 'This is one of the strongest choices because it explains why Truman believes the United States has to step in.',
+        britain: 'This supports the argument, but it is less central than the strongest choices because it mainly serves as evidence for the larger point that no one else can help.'
+      };
+
+      function getSelectedCount() { return selected.size; }
+      function updateUI(message, type) {
+        if (countEl) countEl.textContent = `Selected: ${selected.size} of 5 strongest choices`;
+        const limitReached = selected.size >= 5;
+        choices.forEach(btn => {
+          const isSelected = selected.has(btn.dataset.key);
+          btn.classList.toggle('is-disabled', limitReached && !isSelected);
+          btn.classList.toggle('selected-good', isSelected);
+        });
+        if (message && feedback) {
+          feedback.classList.add('show');
+          feedback.className = `feedback show ${type}`;
+          feedback.textContent = message;
+        }
+      }
+
+      choices.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.key;
+          const isImportant = btn.dataset.important === 'true';
+          if (selected.has(key)) {
+            selected.delete(key);
+            updateUI();
+            saveState();
+            return;
+          }
+          if (!isImportant) {
+            updateUI(messages[key], 'warn');
+            return;
+          }
+          if (getSelectedCount() >= 5) {
+            updateUI('You can only choose 5. Unselect one of your current choices if you want to change your answer.', 'warn');
+            return;
+          }
+          selected.add(key);
+          updateUI(messages[key], 'good');
+          saveState();
+        });
+      });
+    }
+
+    function setupAutoSave() {
+      document.addEventListener('input', event => {
+        if (event.target.matches('textarea[data-save="true"], input[data-save="true"], select[data-save="true"]')) saveState();
+      });
+      document.addEventListener('change', event => {
+        if (event.target.matches('textarea[data-save="true"], input[data-save="true"], select[data-save="true"]')) saveState();
+      });
+    }
+
+    function setAssignmentLocked(isLocked) {
+      [firstReadSection, chunkSection, synthesisSection, finalSection].forEach(section => {
+        if (!section) return;
+        section.classList.toggle('locked-section', isLocked);
+      });
+      if (vocabLockMessage) {
+        vocabLockMessage.textContent = isLocked
+          ? 'Complete all vocabulary matches correctly to unlock the rest of the assignment.'
+          : 'Vocabulary complete. The rest of the assignment is unlocked.';
+        vocabLockMessage.className = `prompt-box${isLocked ? '' : ' feedback show good'}`;
+      }
+    }
+
+    function allVocabCorrect() {
+      return document.querySelectorAll('.drop-zone.correct').length === 12;
+    }
+
+    function updateUnlockState() {
+      setAssignmentLocked(!allVocabCorrect());
+      updateVocabProgress();
+    }
+
+    function computeCompletion() {
+      const checks = [];
+
+      const vocabCorrect = document.querySelectorAll('.drop-zone.correct').length;
+      checks.push(vocabCorrect === 12);
+
+      checks.push(allVocabCorrect());
+      checks.push(Boolean(document.getElementById('firstRead').value.trim()));
+
+      for (let i = 1; i <= 7; i++) {
+        checks.push(Boolean(document.querySelector(`[data-save-key="chunk${i}-topic"]`)?.value.trim()));
+        checks.push(Boolean(document.querySelector(`[data-save-key="chunk${i}-change"]`)?.value.trim()));
+        checks.push(Boolean(document.querySelector(`[data-save-key="chunk${i}-partner"]`)?.value.trim()));
+        const mainText = document.querySelector(`[data-save-key="chunk${i}-main"]`)?.value || '';
+        checks.push(Boolean(mainText.trim()));
+        checks.push(countDistinctVocabUsage(mainText) >= 1);
+        checks.push(Boolean(document.querySelector(`input[name="c${i}q1"]:checked`)));
+        checks.push(Boolean(document.querySelector(`input[name="c${i}q2"]:checked`)));
+      }
+
+      checks.push(Boolean(document.querySelector('[data-save-key="chunk4-claim-check"]')?.value.trim()));
+      checks.push(Boolean(document.querySelector('[data-save-key="chunk4-evidence-check"]')?.value.trim()));
+      checks.push(Boolean(document.querySelector('[data-save-key="chunk4-side"]')?.value.trim()));
+      checks.push(Boolean(document.querySelector('[data-save-key="chunk4-bias"]')?.value.trim()));
+      checks.push(Boolean(document.querySelector('[data-save-key="most-important-chunk"]')?.value.trim()));
+
+      const finalText = document.querySelector('[data-save-key="final-analysis"]')?.value || '';
+      checks.push(Boolean(finalText.trim()));
+      checks.push(countDistinctVocabUsage(finalText) >= 4);
+      checks.push(/"|“|”|chunk|Truman|Greece|Turkey|free peoples|subjugation|coercion/i.test(finalText));
+
+      const completed = checks.filter(Boolean).length;
+      return Math.round((completed / checks.length) * 100);
+    }
+
+    function updateCompletionScore() {
+      const score = computeCompletion();
+      if (completionScoreEl) completionScoreEl.textContent = `${score}%`;
+    }
+
+    function setupButtons() {
+      document.getElementById('saveNowBtn')?.addEventListener('click', () => {
+        saveState();
+        updateSaveStatus('Saved on this device now.');
+      });
+      document.getElementById('resetBtn')?.addEventListener('click', () => {
+        const confirmed = window.confirm('Reset the entire assignment on this device? This will clear all saved answers and progress.');
+        if (!confirmed) return;
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.reload();
+      });
+      document.getElementById('pdfBtn')?.addEventListener('click', () => {
+        updateCompletionScore();
+        window.print();
+      });
+      document.getElementById('downloadHtmlBtn')?.addEventListener('click', () => {
+        saveState();
+        const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'truman-doctrine-close-read-saved.html';
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function runDeveloperChecks() {
+      console.assert(document.querySelectorAll('.chunk').length === 7, 'There should be 7 chunks');
+      console.assert(document.querySelectorAll('.drop-zone').length === 12, 'There should be 12 vocab drop zones');
+      console.assert(document.getElementById('vocabProgress'), 'Vocab progress should exist');
+      console.assert(document.querySelectorAll('.draggable-term').length === 12, 'There should be 12 draggable vocab terms');
+      console.assert(document.querySelectorAll('.chunk2-choice').length === 8, 'Chunk 2 should have 8 selectable options');
+      console.assert(document.querySelectorAll('.highlight-tool').length === 10, 'There should be 10 highlight tool buttons');
+      console.assert(typeof countDistinctVocabUsage === 'function', 'Vocab counter exists');
+      console.assert(document.getElementById('completionScore'), 'Completion score should exist');
+      console.assert(document.getElementById('resetBtn'), 'Reset button should exist');
+    }
+
+    setupNavigation();
+    setupMCChecks();
+    setupHighlightTools();
+    setupVocabDragDrop();
+    setupChunk2Choices();
+    setupAutoSave();
+    setupButtons();
+    loadState();
+    updateUnlockState();
+    updateCompletionScore();
+    runDeveloperChecks();
+  </script>
+</body>
+</html>
